@@ -9,9 +9,6 @@ from typing import Optional
 
 from database import engine, get_db
 import models
-from ai_engine.tensorflow_loader import TensorFlowLoader
-from ai_engine.pytorch_loader import PyTorchLightningLoader
-from ai_engine.onnx_loader import ONNXLoader
 from ai_engine.image_processor import process_medical_image
 from ai_engine.neural_symptom_engine import (
     symptom_engine, 
@@ -47,9 +44,30 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 MODELS_DIR = os.getenv("MODELS_DIR", os.path.join(PROJECT_ROOT, "models"))
 
-tf_eye_model = TensorFlowLoader(model_dir=os.path.join(MODELS_DIR, "tf_eye_model"))
-pt_dr_model = PyTorchLightningLoader(model_dir=os.path.join(MODELS_DIR, "pt_dr_model"))
-onnx_cxr_model = ONNXLoader(model_dir=os.path.join(MODELS_DIR, "chest_xray"))
+_tf_eye_model = None
+_pt_dr_model = None
+_onnx_cxr_model = None
+
+def get_tf_eye_model():
+    global _tf_eye_model
+    if _tf_eye_model is None:
+        from ai_engine.tensorflow_loader import TensorFlowLoader
+        _tf_eye_model = TensorFlowLoader(model_dir=os.path.join(MODELS_DIR, "tf_eye_model"))
+    return _tf_eye_model
+
+def get_pt_dr_model():
+    global _pt_dr_model
+    if _pt_dr_model is None:
+        from ai_engine.pytorch_loader import PyTorchLightningLoader
+        _pt_dr_model = PyTorchLightningLoader(model_dir=os.path.join(MODELS_DIR, "pt_dr_model"))
+    return _pt_dr_model
+
+def get_onnx_cxr_model():
+    global _onnx_cxr_model
+    if _onnx_cxr_model is None:
+        from ai_engine.onnx_loader import ONNXLoader
+        _onnx_cxr_model = ONNXLoader(model_dir=os.path.join(MODELS_DIR, "chest_xray"))
+    return _onnx_cxr_model
 
 def save_temp_file(file: UploadFile):
     os.makedirs(TEMP_DIR, exist_ok=True)
@@ -125,9 +143,9 @@ async def health_check():
     return {
         "status": "online",
         "models": {
-            "tensorflow_eye": tf_eye_model.model is not None,
-            "pytorch_dr": pt_dr_model.model is not None,
-            "onnx_cxr": onnx_cxr_model.session is not None
+            "tensorflow_eye": "ready" if _tf_eye_model is None else (_tf_eye_model.model is not None),
+            "pytorch_dr": "ready" if _pt_dr_model is None else (_pt_dr_model.model is not None),
+            "onnx_cxr": "ready" if _onnx_cxr_model is None else (_onnx_cxr_model.session is not None)
         }
     }
 
@@ -141,7 +159,7 @@ async def diagnose_eye_tf(
 ):
     path = save_temp_file(file)
     try:
-        results = tf_eye_model.predict(path)
+        results = get_tf_eye_model().predict(path)
         processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="eye")
     finally:
         if os.path.exists(path):
@@ -209,7 +227,7 @@ async def diagnose_eye_dr(
 ):
     path = save_temp_file(file)
     try:
-        results = pt_dr_model.predict(path)
+        results = get_pt_dr_model().predict(path)
         processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="eye")
     finally:
         if os.path.exists(path):
@@ -276,7 +294,7 @@ async def diagnose_cxr(
 ):
     path = save_temp_file(file)
     try:
-        results = onnx_cxr_model.predict(path)
+        results = get_onnx_cxr_model().predict(path)
         processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="cxr")
     finally:
         if os.path.exists(path):
