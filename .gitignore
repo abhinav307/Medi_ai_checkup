@@ -1,0 +1,38 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Frontend & Dependencies
+frontend/node_modules/
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.env.local
+frontend/.env.*.local
+
+# Temporary files & logs
+backend/temp/
+backend/temp_uploads/
+backend/static/*.jpg
+*.log
+.DS_Store
+Thumbs.db
+
+# Databases (prevent committing local test data)
+backend/meddiag.db
+backend/medical_records.db
+medical_records.db
+
+# IDEs
+.vscode/
+.idea/

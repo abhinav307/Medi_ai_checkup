@@ -1,0 +1,15 @@
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+/**
+ * Normalizes an image URL so it resolves correctly whether relative, localhost, or hosted.
+ */
+export const getImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://localhost:8000')) {
+    return url.replace('http://localhost:8000', API_BASE_URL);
+  }
+  if (url.startsWith('/')) {
+    return `${API_BASE_URL}${url}`;
+  }
+  return url;
+};

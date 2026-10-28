@@ -1,0 +1,11 @@
+frontend/
+node_modules/
+.git/
+__pycache__/
+*.pyc
+backend/temp/
+backend/temp_uploads/
+backend/static/*.jpg
+backend/meddiag.db
+backend/medical_records.db
+medical_records.db
