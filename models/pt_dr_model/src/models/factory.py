@@ -56,7 +56,10 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         model_class, model_config = model_mapping[model_name]
-        self.model = model_class(weights=model_config["weights"])
+        try:
+            self.model = model_class(weights=None)
+        except Exception:
+            self.model = model_class(weights=model_config["weights"])
 
         # Freeze model parameters
         for param in self.model.parameters():

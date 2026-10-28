@@ -9,8 +9,8 @@ def _format_static_url(filename: str) -> str:
     base_url = os.getenv("BASE_URL", "").rstrip("/")
     return f"{base_url}/static/{filename}" if base_url else f"/static/{filename}"
 
-def _encode_to_webp_b64(bgr_img, max_dim: int = 512, quality: int = 80) -> Optional[str]:
-    """Compresses an image to WebP format and returns a data URI base64 string."""
+def _encode_to_webp_b64(bgr_img, max_dim: int = 512, quality: int = 85) -> Optional[str]:
+    """Compresses an image to standard JPEG format and returns a data URI base64 string."""
     if bgr_img is None:
         return None
     try:
@@ -21,10 +21,10 @@ def _encode_to_webp_b64(bgr_img, max_dim: int = 512, quality: int = 80) -> Optio
             resized = cv2.resize(bgr_img, (new_w, new_h), interpolation=cv2.INTER_AREA)
         else:
             resized = bgr_img
-        success, buffer = cv2.imencode(".webp", resized, [cv2.IMWRITE_WEBP_QUALITY, quality])
+        success, buffer = cv2.imencode(".jpg", resized, [cv2.IMWRITE_JPEG_QUALITY, quality])
         if success:
             encoded = base64.b64encode(buffer).decode("utf-8")
-            return f"data:image/webp;base64,{encoded}"
+            return f"data:image/jpeg;base64,{encoded}"
     except Exception:
         pass
     return None

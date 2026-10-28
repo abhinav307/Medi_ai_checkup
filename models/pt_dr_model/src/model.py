@@ -1,7 +1,20 @@
-import lightning as L
+try:
+    import lightning as L
+except ImportError:
+    try:
+        import pytorch_lightning as L
+    except ImportError:
+        import torch.nn as L
+        L.LightningModule = torch.nn.Module
 import torch
 from torch import nn
-from torchmetrics.functional import accuracy, cohen_kappa
+try:
+    from torchmetrics.functional import accuracy, cohen_kappa
+except ImportError:
+    def accuracy(*args, **kwargs):
+        return torch.tensor(0.0)
+    def cohen_kappa(*args, **kwargs):
+        return torch.tensor(0.0)
 from src.models.factory import ModelFactory
 
 

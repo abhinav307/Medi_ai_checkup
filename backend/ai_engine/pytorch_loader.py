@@ -28,11 +28,15 @@ class PyTorchLightningLoader(MedicalModel):
             
         except Exception as e:
             print(f"Failed to load PyTorch model: {e}")
+            import traceback
+            traceback.print_exc()
+            self.load_error = f"{type(e).__name__}: {str(e)}"
             self.model = None
 
     def predict(self, image_path: str):
         if not self.model:
-            return {"error": "PyTorch Model failed to load (Check console logs for architecture import errors)"}
+            err = f"PyTorch Model failed to load ({self.load_error})" if hasattr(self, 'load_error') and self.load_error else "PyTorch Model failed to load (Check console logs for architecture import errors)"
+            return {"error": err}
             
         try:
             # 1. Preprocess Image
