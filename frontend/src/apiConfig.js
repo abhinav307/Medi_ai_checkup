@@ -1,4 +1,9 @@
-export const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || 
+  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+    ? 'http://localhost:8000' 
+    : 'https://abhinav1a-medi-ai-backend.hf.space')
+).replace(/\/$/, '');
 
 /**
  * Normalizes an image URL so it resolves correctly whether relative, localhost, or hosted.
