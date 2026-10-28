@@ -23,12 +23,35 @@ def _zero_gpu_probe(x: str) -> str:
     return f"ZeroGPU Status: Active ({x})"
 
 import gradio as gr
+from gradio.routes import App
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from backend.main import app as fastapi_app, STATIC_DIR
 
+# 1. Initialize Gradio App subclass of FastAPI with all routes and CORS
+custom_app = App()
+custom_app.include_router(fastapi_app.router)
+custom_app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+custom_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@custom_app.options("/{full_path:path}")
+async def preflight_handler(request: Request, full_path: str):
+    response = JSONResponse(content={"status": "ok"})
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+# 2. Build Gradio UI
 with gr.Blocks(title="MedDiag 2.0 Clinical Diagnostic Suite") as demo:
     gr.Markdown("# 🏥 MedDiag 2.0 Clinical Diagnostic Suite")
     gr.Markdown("The backend AI Inference Engine is **Online & Ready**.")
@@ -45,30 +68,10 @@ with gr.Blocks(title="MedDiag 2.0 Clinical Diagnostic Suite") as demo:
     gr.Markdown("- **API Health Check:** [`/api/health`](/api/health)")
     gr.Markdown("- **Interactive Swagger Docs:** [`/docs`](/docs)")
 
-# Mount FastAPI routes & static files directly onto Gradio's internal FastAPI app
-demo.app.include_router(fastapi_app.router)
-demo.app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-# Enable CORS for custom domain and Vercel
-demo.app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Global preflight OPTIONS handler for all endpoints
-@demo.app.options("/{full_path:path}")
-async def preflight_handler(request: Request, full_path: str):
-    response = JSONResponse(content={"status": "ok"})
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
-
+# 3. Launch Gradio using custom_app
 if __name__ == "__main__":
     demo.launch(
+        _app=custom_app,
         server_name="0.0.0.0",
         server_port=7860,
         ssr_mode=False,
