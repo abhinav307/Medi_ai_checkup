@@ -5,6 +5,21 @@ import sys
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, "backend"))
 
+try:
+    import spaces
+except ImportError:
+    class _MockSpaces:
+        def GPU(self, fn=None, *args, **kwargs):
+            if fn is None:
+                return lambda f: f
+            return fn
+    spaces = _MockSpaces()
+
+@spaces.GPU
+def _zero_gpu_init():
+    """Satisfies Hugging Face ZeroGPU startup requirement"""
+    return "ZeroGPU Online"
+
 import gradio as gr
 from backend.main import app
 
