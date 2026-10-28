@@ -10,6 +10,9 @@ export const API_BASE_URL = (
  */
 export const getImageUrl = (url) => {
   if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
   if (url.startsWith('http://localhost:8000')) {
     return url.replace('http://localhost:8000', API_BASE_URL);
   }

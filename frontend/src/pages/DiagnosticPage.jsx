@@ -88,7 +88,7 @@ const DiagnosticPage = ({ title, endpoint, framework, sampleScans = [] }) => {
     }
     if (activeImageKey === "processed") {
       return {
-        url: result.processed_image_url || preview,
+        url: result.processed_image_base64 || result.processed_image_url || preview,
         title: "Primary Pathology Attention Map",
         desc: "Full-spectrum CLAHE equalization and primary lesion attention heatmap."
       };
@@ -97,14 +97,14 @@ const DiagnosticPage = ({ title, endpoint, framework, sampleScans = [] }) => {
       const found = result.multi_copies.find(c => c.key === activeImageKey);
       if (found) {
         return {
-          url: found.url,
+          url: found.image_base64 || found.url,
           title: found.title,
           desc: found.description
         };
       }
     }
     return {
-      url: result.processed_image_url || preview,
+      url: result.processed_image_base64 || result.processed_image_url || preview,
       title: "Diagnostic Visualization",
       desc: "Processed clinical analysis."
     };
@@ -382,7 +382,7 @@ const DiagnosticPage = ({ title, endpoint, framework, sampleScans = [] }) => {
                         </button>
 
                         {/* 2. Primary Heatmap */}
-                        {result.processed_image_url && (
+                        {(result.processed_image_base64 || result.processed_image_url) && (
                           <button
                             type="button"
                             onClick={() => setActiveImageKey("processed")}
@@ -392,7 +392,7 @@ const DiagnosticPage = ({ title, endpoint, framework, sampleScans = [] }) => {
                                 : 'bg-[#0c1726] border-[#162842] hover:border-slate-600'
                             }`}
                           >
-                            <img src={getImageUrl(result.processed_image_url)} alt="Heatmap" className="w-full h-8 object-cover rounded" />
+                            <img src={getImageUrl(result.processed_image_base64 || result.processed_image_url)} alt="Heatmap" className="w-full h-8 object-cover rounded" />
                             <span className="text-[8px] font-bold text-cyan-400 truncate w-full text-center">Heatmap</span>
                           </button>
                         )}
@@ -409,7 +409,7 @@ const DiagnosticPage = ({ title, endpoint, framework, sampleScans = [] }) => {
                                 : 'bg-[#0c1726] border-[#162842] hover:border-slate-600'
                             }`}
                           >
-                            <img src={getImageUrl(copy.url)} alt={copy.title} className="w-full h-8 object-cover rounded" />
+                            <img src={getImageUrl(copy.thumbnail_base64 || copy.image_base64 || copy.url)} alt={copy.title} className="w-full h-8 object-cover rounded" />
                             <span className="text-[8px] font-bold text-slate-300 truncate w-full text-center">
                               {copy.key === "vasculature" ? "Vessels" :
                                copy.key === "hemorrhages" ? "Hemorrhages" :

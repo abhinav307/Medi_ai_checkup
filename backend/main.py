@@ -91,7 +91,8 @@ def log_to_db(
     processed_img=None,
     img_type=None,
     quality_telemetry=None,
-    multi_copies=None
+    multi_copies=None,
+    primary_base64=None
 ):
     base_url = os.getenv("BASE_URL", "").rstrip("/")
     url = f"{base_url}/static/{processed_img}" if base_url else f"/static/{processed_img}" if processed_img else None
@@ -134,6 +135,7 @@ def log_to_db(
         "findings": record.get_findings(),
         "quality_metrics": record.get_quality_metrics(),
         "processed_image_url": record.processed_image_url,
+        "processed_image_base64": primary_base64,
         "image_type": record.image_type,
         "multi_copies": record.get_multi_copies()
     }
@@ -160,7 +162,7 @@ async def diagnose_eye_tf(
     path = save_temp_file(file)
     try:
         results = get_tf_eye_model().predict(path)
-        processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="eye")
+        processed_filename, img_type, telemetry, multi_copies, primary_base64 = process_medical_image(path, STATIC_DIR, modality_hint="eye")
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -213,7 +215,8 @@ async def diagnose_eye_tf(
             db, patient_name, patient_age, patient_gender,
             "Ophthalmic Screening (TensorFlow)",
             diag, conf, triage, rec, findings,
-            processed_filename, img_type, telemetry, multi_copies
+            processed_filename, img_type, telemetry, multi_copies,
+            primary_base64
         )
     }
 
@@ -228,7 +231,7 @@ async def diagnose_eye_dr(
     path = save_temp_file(file)
     try:
         results = get_pt_dr_model().predict(path)
-        processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="eye")
+        processed_filename, img_type, telemetry, multi_copies, primary_base64 = process_medical_image(path, STATIC_DIR, modality_hint="eye")
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -280,7 +283,8 @@ async def diagnose_eye_dr(
             db, patient_name, patient_age, patient_gender,
             "Diabetic Retinopathy (PyTorch)",
             diag, conf, triage, rec, findings,
-            processed_filename, img_type, telemetry, multi_copies
+            processed_filename, img_type, telemetry, multi_copies,
+            primary_base64
         )
     }
 
@@ -295,7 +299,7 @@ async def diagnose_cxr(
     path = save_temp_file(file)
     try:
         results = get_onnx_cxr_model().predict(path)
-        processed_filename, img_type, telemetry, multi_copies = process_medical_image(path, STATIC_DIR, modality_hint="cxr")
+        processed_filename, img_type, telemetry, multi_copies, primary_base64 = process_medical_image(path, STATIC_DIR, modality_hint="cxr")
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -338,7 +342,8 @@ async def diagnose_cxr(
             db, patient_name, patient_age, patient_gender,
             "Chest Radiograph (ONNX)",
             diag, conf, triage, rec, findings,
-            processed_filename, img_type, telemetry, multi_copies
+            processed_filename, img_type, telemetry, multi_copies,
+            primary_base64
         )
     }
 
