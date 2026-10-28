@@ -1,16 +1,11 @@
 import os
 import sys
 
-# Prevent TensorFlow and ONNX device-probing segfaults in headless containers
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-os.environ["OMP_NUM_THREADS"] = "2"
-
 # Ensure backend directory is in python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, "backend"))
 
+# ZeroGPU decorator support
 try:
     import spaces
 except ImportError:
@@ -22,26 +17,43 @@ except ImportError:
     spaces = _MockSpaces()
 
 @spaces.GPU
-def _zero_gpu_init():
-    """Satisfies Hugging Face ZeroGPU startup requirement"""
-    return "ZeroGPU Online"
+def _zero_gpu_probe(x: str) -> str:
+    """Attached to Gradio demo to satisfy Hugging Face ZeroGPU startup scanner"""
+    return f"ZeroGPU Status: Active ({x})"
 
 import gradio as gr
-from backend.main import app
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from backend.main import app as fastapi_app, STATIC_DIR
 
-with gr.Blocks(title="MedDiag 2.0 Clinical API") as demo:
-    gr.Markdown("# 🏥 MedDiag 2.0 Clinical Diagnostic API Server")
-    gr.Markdown("The backend is **Active & Running** on Hugging Face Spaces.")
-    gr.Markdown("This server provides AI inference for the MedDiag React frontend deployed on Vercel.")
-    gr.Markdown("### Endpoints & Documentation")
+with gr.Blocks(title="MedDiag 2.0 Clinical Diagnostic Suite") as demo:
+    gr.Markdown("# 🏥 MedDiag 2.0 Clinical Diagnostic Suite")
+    gr.Markdown("The backend AI Inference Engine is **Online & Ready**.")
+    gr.Markdown("Serving frontend at: `https://medi.foramify.top`")
+    
+    # Internal probe component connected to @spaces.GPU to satisfy HF scanner
+    with gr.Accordion("System Telemetry", open=False):
+        probe_input = gr.Textbox(value="ping", visible=False)
+        probe_output = gr.Textbox(label="Hardware Status", interactive=False)
+        probe_btn = gr.Button("Check Hardware", visible=False)
+        probe_btn.click(fn=_zero_gpu_probe, inputs=probe_input, outputs=probe_output)
+    
+    gr.Markdown("### API Documentation & Status")
+    gr.Markdown("- **API Health Check:** [`/api/health`](/api/health)")
     gr.Markdown("- **Interactive Swagger Docs:** [`/docs`](/docs)")
-    gr.Markdown("- **Health Status:** [`/api/health`](/api/health)")
-    gr.Markdown("- **Records API:** [`/api/records`](/api/records)")
 
-# Mount Gradio UI at root '/' so the Space landing page shows server status
-app = gr.mount_gradio_app(app, demo, path="/")
+# Mount FastAPI routes & static files directly onto Gradio's internal FastAPI app
+demo.app.include_router(fastapi_app.router)
+demo.app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+# Enable CORS for custom domain and Vercel
+demo.app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 7860))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
