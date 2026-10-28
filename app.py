@@ -1,8 +1,9 @@
 import os
 import sys
 
-# Ensure backend directory is in python path
+# Ensure project root and backend directories are in python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BASE_DIR)
 sys.path.insert(0, os.path.join(BASE_DIR, "backend"))
 
 # ZeroGPU decorator support
@@ -22,6 +23,7 @@ def _zero_gpu_probe(x: str) -> str:
     return f"ZeroGPU Status: Active ({x})"
 
 import gradio as gr
+import uvicorn
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from backend.main import app as fastapi_app, STATIC_DIR
@@ -42,18 +44,8 @@ with gr.Blocks(title="MedDiag 2.0 Clinical Diagnostic Suite") as demo:
     gr.Markdown("- **API Health Check:** [`/api/health`](/api/health)")
     gr.Markdown("- **Interactive Swagger Docs:** [`/docs`](/docs)")
 
-# Mount FastAPI routes & static files directly onto Gradio's internal FastAPI app
-demo.app.include_router(fastapi_app.router)
-demo.app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-# Enable CORS for custom domain and Vercel
-demo.app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Mount Gradio onto FastAPI with ssr_mode=False so FastAPI controls routing, CORS, and multipart POST
+app = gr.mount_gradio_app(fastapi_app, demo, path="/", ssr_mode=False)
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    uvicorn.run(app, host="0.0.0.0", port=7860)

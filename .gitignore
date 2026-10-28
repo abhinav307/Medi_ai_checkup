@@ -32,6 +32,9 @@ Thumbs.db
 backend/meddiag.db
 backend/medical_records.db
 medical_records.db
+meddiag.db
+*.db
+
 
 # IDEs
 .vscode/
