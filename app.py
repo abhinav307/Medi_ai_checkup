@@ -1,6 +1,12 @@
 import os
 import sys
 
+# Prevent TensorFlow and ONNX device-probing segfaults in headless containers
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["OMP_NUM_THREADS"] = "2"
+
 # Ensure backend directory is in python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, "backend"))

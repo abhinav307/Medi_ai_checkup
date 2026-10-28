@@ -16,7 +16,7 @@ class ONNXLoader(MedicalModel):
             if not os.path.exists(path):
                 raise FileNotFoundError(f"No ONNX file found at {path}")
             
-            self.session = ort.InferenceSession(path)
+            self.session = ort.InferenceSession(path, providers=['CPUExecutionProvider'])
             self.input_name = self.session.get_inputs()[0].name
             print(f"ONNX model loaded successfully from {path}.")
         except Exception as e:
